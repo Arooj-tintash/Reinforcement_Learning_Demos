@@ -178,5 +178,5 @@ def demoFromCheckpoint(episode_number):
             prev_processed_observations = None
             
     env.close()
-# startTraining()
-demoFromCheckpoint(20)
+startTraining()
+#demoFromCheckpoint(20)
