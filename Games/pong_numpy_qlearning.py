@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-from Models.model_using_numpy import *
+from models.model_using_numpy import model_using_numpy
 
 def downsample(image):
     # Take only alternate pixels - basically halves the resolution of the image (which is fine for us)
@@ -48,11 +48,11 @@ def choose_action(probability):
         return 3
 
 def saveFile(reward_sum):
-    np.savetxt("History/pong_numpy_qlearning_rewards.txt",reward_sum, fmt= '%d')
+    np.savetxt("history/pong_numpy_qlearning_rewards.txt",reward_sum, fmt= '%d')
 
 def loadFile():
-    Rewards = np.loadtxt("History/pong_numpy_qlearning_rewards.txt", dtype=int)
-    return Rewards
+    Rewards = np.loadtxt("history/pong_numpy_qlearning_rewards.txt", dtype=int)
+    return Rewards.tolist()
 
 def visualize(number_eps, rewards):
     plt.plot(number_eps, rewards, linestyle='--')
@@ -66,23 +66,36 @@ def main():
     env = gym.make("Pong-v0")
     observation = env.reset() # This gets us the image
 
-    reward_sum = 0
-    reward_sum_array = []
-    expectation_g_squared = {}
-    g_dict = {}
-    num_hidden_layer_neurons = 200
+    #hyper-parameters
     input_dimensions = 80 * 80
-    weights = create_neural_network(num_hidden_layer_neurons, input_dimensions)
-    for layer_name in weights.keys():
-        expectation_g_squared[layer_name] = np.zeros_like(weights[layer_name])
-        g_dict[layer_name] = np.zeros_like(weights[layer_name])
+    num_hidden_layer_neurons = 200
+    number_of_episodes = 100
+
+    #Initialising attriobutes
+    prev_processed_observations = None
+    running_reward = None
+    reward_sum = 0
+    
+    resume = True
+    render = False
+
+    if resume is True:
+        reward_sum_array = loadFile()
+    else:
+        reward_sum_array = np.array
+
+    episode_number = len(reward_sum_array)
+
+    #Create a model object
+    model = model_using_numpy(num_hidden_layer_neurons, input_dimensions, "history/pong_numpy_qlearning_weights.p", resume)
 
     episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], []
 
-    while True:
-        env.render()
-        processed_observations, prev_processed_observations = preprocess_observations(observation, model_using_numpy.prev_processed_observations, input_dimensions)
-        hidden_layer_values, up_probability = apply_neural_nets(processed_observations, weights)
+    while episode_number < number_of_episodes:
+        if render:
+            env.render()
+        processed_observations, prev_processed_observations = preprocess_observations(observation, prev_processed_observations, input_dimensions)
+        hidden_layer_values, up_probability = model.apply_neural_nets(processed_observations)
     
         episode_observations.append(processed_observations)
         episode_hidden_layer_values.append(hidden_layer_values)
@@ -90,50 +103,32 @@ def main():
         action = choose_action(up_probability)
 
         # carry out the chosen action
-        observation, reward, done, info = env.step(action)
+        observation, reward, done, _ = env.step(action)
 
         reward_sum += reward
         episode_rewards.append(reward)
-        reward_sum_array.append(reward_sum)
 
         fake_label = 1 if action == 2 else 0
         loss_function_gradient = fake_label - up_probability
         episode_gradient_log_ps.append(loss_function_gradient)
         
-        if done: 
-            model_using_numpy.episode_number += 1
+        if done:
+            episode_number += 1
             
-             # Combine the following values for the episode
-            episode_hidden_layer_values = np.vstack(episode_hidden_layer_values)
-            episode_observations = np.vstack(episode_observations)
-            episode_gradient_log_ps = np.vstack(episode_gradient_log_ps)
-            episode_rewards = np.vstack(episode_rewards)
+            reward_sum_array.append(reward_sum)
 
-            # Tweak the gradient of the log_ps based on the discounted rewards
-            episode_gradient_log_ps_discounted = discount_with_rewards(episode_gradient_log_ps, episode_rewards, model_using_numpy.gamma)
-            gradient = compute_gradient(
-                episode_gradient_log_ps_discounted,
-                episode_hidden_layer_values,
-                episode_observations,
-                weights)
+            model.trainModel(episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards, episode_number)
 
-             # Sum the gradient for use when we hit the batch size
-            for layer_name in gradient:
-                g_dict[layer_name] += gradient[layer_name]
-            
-            if model_using_numpy.episode_number % model_using_numpy.batch_size == 0:
-                update_weights(weights, expectation_g_squared, g_dict, model_using_numpy.decay_rate, model_using_numpy.learning_rate)
-            
             episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], [] # reset values
             observation = env.reset() # reset env
-            running_reward = reward_sum if model_using_numpy.running_reward is None else model_using_numpy.running_reward * 0.99 + reward_sum * 0.01
-            print ('resetting env. episode reward total was %f. running mean: %f' % (reward_sum, running_reward))
+            
+            running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
+            print ('Episode Number %d resetting. episode reward total was %f. running mean: %f' % (episode_number, reward_sum, running_reward))
+            
             reward_sum = 0
             prev_processed_observations = None
 
-    saveFile(reward_sum_array)
-
-
-
+            if episode_number % 10 == 0:
+                saveFile(reward_sum_array)
         
 main()
