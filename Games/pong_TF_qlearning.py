@@ -2,8 +2,8 @@ import gym
 import numpy as np
 from matplotlib import pyplot as plt
 
-
-from models.model_using_numpy import model_using_numpy
+import tensorflow as tf
+from models.model_using_tensorflow import Tensorflow
 
 def downsample(image):
     # Take only alternate pixels - basically halves the resolution of the image (which is fine for us)
@@ -69,14 +69,14 @@ def main():
     #hyper-parameters
     input_dimensions = 80 * 80
     num_hidden_layer_neurons = 200
-    number_of_episodes = 100000
+    number_of_episodes = 100
 
     #Initialising attriobutes
     prev_processed_observations = None
     running_reward = None
     reward_sum = 0
     
-    resume = True
+    resume = False
     render = False
 
     if resume is True:
@@ -86,49 +86,71 @@ def main():
 
     episode_number = len(reward_sum_array)
 
-    #Create a model object
-    model = model_using_numpy(num_hidden_layer_neurons, input_dimensions, "history/pong_numpy_qlearning_weights.p", resume)
-
-    episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], []
+    model = Tensorflow(num_hidden_layer_neurons, input_dimensions, "pong_TF_qlearning_weights.ckpt", resume)
+        
+    episode_observations, episode_rewards, episode_actions = [], [], []
 
     while episode_number < number_of_episodes:
         if render:
-            env.render()
+            env.render()        
         processed_observations, prev_processed_observations = preprocess_observations(observation, prev_processed_observations, input_dimensions)
-        hidden_layer_values, up_probability = model.apply_neural_nets(processed_observations)
-    
-        episode_observations.append(processed_observations)
-        episode_hidden_layer_values.append(hidden_layer_values)
+        # hidden_layer_values, up_probability = apply_neural_nets(processed_observations, weights)
+
+        up_probability = model.predict(processed_observations)
+        
+        # episode_hidden_layer_values.append(hidden_layer_values)
 
         action = choose_action(up_probability)
 
         # carry out the chosen action
-        observation, reward, done, _ = env.step(action)
-
+        observation, reward, done, info = env.step(action)
+    
         reward_sum += reward
-        episode_rewards.append(reward)
 
-        fake_label = 1 if action == 2 else 0
-        loss_function_gradient = fake_label - up_probability
-        episode_gradient_log_ps.append(loss_function_gradient)
-        
-        if done:
+        if action == 2:
+            action = 1
+        else:
+            action = 0
+
+        episode_actions.append(action)
+        episode_rewards.append(reward)
+        episode_observations.append(processed_observations)
+
+        if done: 
             episode_number += 1
             
+            model.trainNetwork(episode_rewards, episode_observations, episode_actions)
+            
+            episode_observations, episode_rewards, episode_actions = [], [], [] # reset values
+            
+            observation = env.reset() # reset env
+            running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
+
+            print(episode_number)
+            print(reward_sum)
             reward_sum_array.append(reward_sum)
 
-            model.trainModel(episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards, episode_number)
+            if episode_number % 5 == 0:
+                print (' episode reward total was %f. running mean: %f' % (reward_sum, running_reward))
+                print ('ep %d: game finished, reward: %f' % (episode_number, reward_sum))
 
-            episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], [] # reset values
-            observation = env.reset() # reset env
-            
-            running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
-            print ('Episode Number %d resetting. episode reward total was %f. running mean: %f' % (episode_number, reward_sum, running_reward))
-            
             reward_sum = 0
             prev_processed_observations = None
-
-            if episode_number % 10 == 0:
+            
+            if episode_number % 100 == 0:
+                model.saveModel()
                 saveFile(reward_sum_array)
-        
+                print('-------------------------SAVED-------------------------------')
+    
+            # else:        
+            #     episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], [] # reset values
+            #     observation = env.reset() # reset env
+            #     running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
+            #     print ('resetting env. episode reward total was %f. running mean: %f' % (reward_sum, running_reward))
+            #     reward_sum = 0
+            #     prev_processed_observations = None
+    #print(reward_sum_array)
+    
+    env.close()
+
 main()
