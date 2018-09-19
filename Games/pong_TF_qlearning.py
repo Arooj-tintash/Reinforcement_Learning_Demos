@@ -70,9 +70,9 @@ def main():
     input_dimensions = 80 * 80
     num_hidden_layer_neurons = 200
     
-    number_of_episodes = 100
-    saveFreq = 5
-    modelChkpntFreq = 10
+    number_of_episodes = 1000000
+    saveFreq = 500
+    modelChkpntFreq = 10000
 
     #Initialising attriobutes
     prev_processed_observations = None
