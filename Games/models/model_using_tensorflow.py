@@ -11,7 +11,7 @@ import os
 
 
 class Tensorflow():
-    def __init__(self, num_hidden_layer_neurons, input_dimensions, modelFileName, isResume):
+    def __init__(self, num_hidden_layer_neurons, input_dimensions, modelFileName, modelDir, isResume):
         #Fixed Hyperparameters
         self.learning_rate = 0.0005
         self.gamma = 0.99 # discount factor for reward
@@ -20,8 +20,6 @@ class Tensorflow():
         self.input_dimensions = input_dimensions
         self.batch_size = 1
         self.saveFreq = 20
-
-        self.modelFileName = modelFileName
 
         self.session = tf.InteractiveSession()
 
@@ -55,7 +53,8 @@ class Tensorflow():
 
         tf.global_variables_initializer().run(session = self.session)
 
-        self.checkpoint_file = os.path.join('history',modelFileName)
+        self.modeldir = modelDir
+        self.checkpoint_file = os.path.join(modelDir,modelFileName)
         self.saver = tf.train.Saver()
 
         if isResume:
@@ -106,3 +105,6 @@ class Tensorflow():
     def saveModel(self):
         self.saver.save(self.session, self.checkpoint_file)
 
+    def saveCheckpoint(self, fileName):
+        checkpoint_file = os.path.join(self.modeldir, fileName)
+        self.saver.save(self.session, checkpoint_file)

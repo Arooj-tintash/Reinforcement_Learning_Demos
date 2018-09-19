@@ -48,10 +48,10 @@ def choose_action(probability):
         return 3
 
 def saveFile(reward_sum):
-    np.savetxt("history/pong_numpy_qlearning_rewards.txt",reward_sum, fmt= '%d')
+    np.savetxt("history/pong_tf_qlearning/pong_numpy_qlearning_rewards.txt",reward_sum, fmt= '%d')
 
 def loadFile():
-    Rewards = np.loadtxt("history/pong_numpy_qlearning_rewards.txt", dtype=int)
+    Rewards = np.loadtxt("history/pong_tf_qlearning/pong_numpy_qlearning_rewards.txt", dtype=int)
     return Rewards.tolist()
 
 def visualize(number_eps, rewards):
@@ -69,7 +69,10 @@ def main():
     #hyper-parameters
     input_dimensions = 80 * 80
     num_hidden_layer_neurons = 200
+    
     number_of_episodes = 100
+    saveFreq = 5
+    modelChkpntFreq = 10
 
     #Initialising attriobutes
     prev_processed_observations = None
@@ -86,7 +89,7 @@ def main():
 
     episode_number = len(reward_sum_array)
 
-    model = Tensorflow(num_hidden_layer_neurons, input_dimensions, "pong_TF_qlearning_weights.ckpt", resume)
+    model = Tensorflow(num_hidden_layer_neurons, input_dimensions, "pong_TF_qlearning_weights.ckpt", 'history/pong_tf_qlearning/', resume)
         
     episode_observations, episode_rewards, episode_actions = [], [], []
 
@@ -124,33 +127,23 @@ def main():
             episode_observations, episode_rewards, episode_actions = [], [], [] # reset values
             
             observation = env.reset() # reset env
-            running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
 
-            print(episode_number)
-            print(reward_sum)
             reward_sum_array.append(reward_sum)
 
-            if episode_number % 5 == 0:
-                print (' episode reward total was %f. running mean: %f' % (reward_sum, running_reward))
-                print ('ep %d: game finished, reward: %f' % (episode_number, reward_sum))
+            running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
+            print ('Episode Number %d resetting. episode reward total was %f. running mean: %f' % (episode_number, reward_sum, running_reward))
 
             reward_sum = 0
             prev_processed_observations = None
             
-            if episode_number % 100 == 0:
+            if episode_number % saveFreq == 1:
                 model.saveModel()
                 saveFile(reward_sum_array)
-                print('-------------------------SAVED-------------------------------')
-    
-            # else:        
-            #     episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], [] # reset values
-            #     observation = env.reset() # reset env
-            #     running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
-            #     print ('resetting env. episode reward total was %f. running mean: %f' % (reward_sum, running_reward))
-            #     reward_sum = 0
-            #     prev_processed_observations = None
-    #print(reward_sum_array)
-    
+
+            if episode_number % modelChkpntFreq == 1:
+                filename = 'pong_TF_qlearning_weights_' + str(episode_number) + '.ckpt'
+                model.saveCheckpoint(filename)
+
     env.close()
 
 main()

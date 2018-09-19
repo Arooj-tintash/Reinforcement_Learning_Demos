@@ -135,7 +135,7 @@ def startTraining():
                 model.saveWeights()
                 saveFile(reward_sum_array)
 
-            if episode_number-1 % modelChkpntFreq == 1:
+            if episode_number % modelChkpntFreq == 1:
                 filename = 'history/pong_numpy_qlearning/pong_numpy_qlearning_weights_episode_' + str(episode_number) + '.p'
                 model.saveCheckpoint(filename)
 
