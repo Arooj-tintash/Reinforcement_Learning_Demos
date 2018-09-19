@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 import tensorflow as tf
 from models.model_using_tensorflow import Tensorflow
@@ -54,12 +54,12 @@ def loadFile():
     Rewards = np.loadtxt("history/pong_tf_qlearning/pong_numpy_qlearning_rewards.txt", dtype=int)
     return Rewards.tolist()
 
-def visualize(number_eps, rewards):
-    plt.plot(number_eps, rewards, linestyle='--')
-    plt.ylim(-25,20)
-    plt.xlabel('Number of Episodes')
-    plt.ylabel('Rewards')
-    plt.show()
+# def visualize(number_eps, rewards):
+    # plt.plot(number_eps, rewards, linestyle='--')
+    # plt.ylim(-25,20)
+    # plt.xlabel('Number of Episodes')
+    # plt.ylabel('Rewards')
+    # plt.show()
 
 
 def main():
