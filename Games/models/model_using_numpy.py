@@ -13,7 +13,6 @@ class model_using_numpy():
         self.learning_rate = 1e-4
 
         self.batch_size = 10
-        self.saveFreq = 20
 
         self.num_hidden_layer_neurons = num_hidden_layer_neurons
         self.input_dimensions = input_dimensions
@@ -112,9 +111,9 @@ class model_using_numpy():
         
         if episode_number % self.batch_size == 0:
             self.update_weights(self.weights, self.expectation_g_squared, self.g_dict, self.decay_rate, self.learning_rate)
-
-        if episode_number % self.saveFreq == 0:
-            self.saveWeights()
             
     def saveWeights(self):
         pickle.dump(self.weights, open(self.modelFileName, 'wb'))
+
+    def saveCheckpoint(self, fileName):
+        pickle.dump(self.weights, open(fileName, 'wb'))

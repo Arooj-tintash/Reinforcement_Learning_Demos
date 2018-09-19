@@ -48,10 +48,10 @@ def choose_action(probability):
         return 3
 
 def saveFile(reward_sum):
-    np.savetxt("history/pong_numpy_qlearning_rewards.txt",reward_sum, fmt= '%d')
+    np.savetxt("history/pong_numpy_qlearning/pong_numpy_qlearning_rewards.txt",reward_sum, fmt= '%d')
 
 def loadFile():
-    Rewards = np.loadtxt("history/pong_numpy_qlearning_rewards.txt", dtype=int)
+    Rewards = np.loadtxt("history/pong_numpy_qlearning/pong_numpy_qlearning_rewards.txt", dtype=int)
     return Rewards.tolist()
 
 def visualize(number_eps, rewards):
@@ -62,21 +62,24 @@ def visualize(number_eps, rewards):
     plt.show()
 
 
-def main():
+def startTraining():
     env = gym.make("Pong-v0")
     observation = env.reset() # This gets us the image
 
     #hyper-parameters
     input_dimensions = 80 * 80
     num_hidden_layer_neurons = 200
-    number_of_episodes = 100000
+    
+    number_of_episodes = 1000000
+    saveFreq = 500
+    modelChkpntFreq = 10000
 
     #Initialising attriobutes
     prev_processed_observations = None
     running_reward = None
     reward_sum = 0
     
-    resume = True
+    resume = False
     render = False
 
     if resume is True:
@@ -87,7 +90,7 @@ def main():
     episode_number = len(reward_sum_array)
 
     #Create a model object
-    model = model_using_numpy(num_hidden_layer_neurons, input_dimensions, "history/pong_numpy_qlearning_weights.p", resume)
+    model = model_using_numpy(num_hidden_layer_neurons, input_dimensions, "history/pong_numpy_qlearning/pong_numpy_qlearning_weights.p", resume)
 
     episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], []
 
@@ -128,7 +131,52 @@ def main():
             reward_sum = 0
             prev_processed_observations = None
 
-            if episode_number % 10 == 0:
+            if episode_number % saveFreq == 1:
+                model.saveWeights()
                 saveFile(reward_sum_array)
-        
-main()
+
+            if episode_number-1 % modelChkpntFreq == 1:
+                filename = 'history/pong_numpy_qlearning/pong_numpy_qlearning_weights_episode_' + str(episode_number) + '.p'
+                model.saveCheckpoint(filename)
+
+def demoFromCheckpoint(episode_number):
+    env = gym.make("Pong-v0")
+    observation = env.reset() # This gets us the image
+    prev_processed_observations = None
+
+    #hyper-parameters
+    input_dimensions = 80 * 80
+    num_hidden_layer_neurons = 200
+
+    resume = True
+
+    #Create a model object
+    filename = 'history/pong_numpy_qlearning/pong_numpy_qlearning_weights_episode_' + str(episode_number) + '.p'
+    model = model_using_numpy(num_hidden_layer_neurons, input_dimensions, filename, resume)
+
+    reward_sum = 0
+    episode_number = 0
+
+    while episode_number < 10:
+        env.render()
+        processed_observations, prev_processed_observations = preprocess_observations(observation, prev_processed_observations, input_dimensions)
+        _, up_probability = model.apply_neural_nets(processed_observations) 
+
+        action = choose_action(up_probability)
+
+        # carry out the chosen action
+        observation, reward, done, _ = env.step(action)
+        reward_sum += reward
+
+        if done :
+            episode_number += 1
+
+            observation = env.reset() # reset env
+            print ('Episode Number %d. episode reward total was %f.' % (episode_number, reward_sum))
+
+            reward_sum = 0
+            prev_processed_observations = None
+            
+    env.close()
+# startTraining()
+demoFromCheckpoint(20)
