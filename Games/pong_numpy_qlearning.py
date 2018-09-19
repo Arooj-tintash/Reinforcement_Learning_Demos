@@ -1,7 +1,6 @@
 import gym
 import numpy as np
-
-import sys
+from matplotlib import pyplot as plt
 
 
 from Models.model_using_numpy import *
@@ -48,10 +47,27 @@ def choose_action(probability):
          # signifies down in openai gym
         return 3
 
+def saveFile(reward_sum):
+    np.savetxt("History/pong_numpy_qlearning_rewards.txt",reward_sum, fmt= '%d')
+
+def loadFile():
+    Rewards = np.loadtxt("History/pong_numpy_qlearning_rewards.txt", dtype=int)
+    return Rewards
+
+def visualize(number_eps, rewards):
+    plt.plot(number_eps, rewards, linestyle='--')
+    plt.ylim(-25,20)
+    plt.xlabel('Number of Episodes')
+    plt.ylabel('Rewards')
+    plt.show()
+
+
 def main():
     env = gym.make("Pong-v0")
     observation = env.reset() # This gets us the image
 
+    reward_sum = 0
+    reward_sum_array = []
     expectation_g_squared = {}
     g_dict = {}
     num_hidden_layer_neurons = 200
@@ -65,7 +81,7 @@ def main():
 
     while True:
         env.render()
-        processed_observations, prev_processed_observations = preprocess_observations(observation, prev_processed_observations, input_dimensions)
+        processed_observations, prev_processed_observations = preprocess_observations(observation, model_using_numpy.prev_processed_observations, input_dimensions)
         hidden_layer_values, up_probability = apply_neural_nets(processed_observations, weights)
     
         episode_observations.append(processed_observations)
@@ -78,13 +94,14 @@ def main():
 
         reward_sum += reward
         episode_rewards.append(reward)
+        reward_sum_array.append(reward_sum)
 
         fake_label = 1 if action == 2 else 0
         loss_function_gradient = fake_label - up_probability
         episode_gradient_log_ps.append(loss_function_gradient)
         
         if done: 
-            episode_number += 1
+            model_using_numpy.episode_number += 1
             
              # Combine the following values for the episode
             episode_hidden_layer_values = np.vstack(episode_hidden_layer_values)
@@ -93,7 +110,7 @@ def main():
             episode_rewards = np.vstack(episode_rewards)
 
             # Tweak the gradient of the log_ps based on the discounted rewards
-            episode_gradient_log_ps_discounted = discount_with_rewards(episode_gradient_log_ps, episode_rewards, gamma)
+            episode_gradient_log_ps_discounted = discount_with_rewards(episode_gradient_log_ps, episode_rewards, model_using_numpy.gamma)
             gradient = compute_gradient(
                 episode_gradient_log_ps_discounted,
                 episode_hidden_layer_values,
@@ -104,15 +121,17 @@ def main():
             for layer_name in gradient:
                 g_dict[layer_name] += gradient[layer_name]
             
-            if episode_number % batch_size == 0:
-                update_weights(weights, expectation_g_squared, g_dict, decay_rate, learning_rate)
+            if model_using_numpy.episode_number % model_using_numpy.batch_size == 0:
+                update_weights(weights, expectation_g_squared, g_dict, model_using_numpy.decay_rate, model_using_numpy.learning_rate)
             
             episode_hidden_layer_values, episode_observations, episode_gradient_log_ps, episode_rewards = [], [], [], [] # reset values
             observation = env.reset() # reset env
-            running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
+            running_reward = reward_sum if model_using_numpy.running_reward is None else model_using_numpy.running_reward * 0.99 + reward_sum * 0.01
             print ('resetting env. episode reward total was %f. running mean: %f' % (reward_sum, running_reward))
             reward_sum = 0
             prev_processed_observations = None
+
+    saveFile(reward_sum_array)
 
 
 
