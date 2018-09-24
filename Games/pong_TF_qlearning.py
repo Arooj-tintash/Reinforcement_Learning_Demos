@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 import tensorflow as tf
 from models.model_using_tensorflow import Tensorflow
@@ -54,12 +54,12 @@ def loadFile():
     Rewards = np.loadtxt("history/pong_tf_qlearning/pong_numpy_qlearning_rewards.txt", dtype=int)
     return Rewards.tolist()
 
-def visualize(number_eps, rewards):
-    plt.plot(number_eps, rewards, linestyle='--')
-    plt.ylim(-25,20)
-    plt.xlabel('Number of Episodes')
-    plt.ylabel('Rewards')
-    plt.show()
+# def visualize(number_eps, rewards):
+    # plt.plot(number_eps, rewards, linestyle='--')
+    # plt.ylim(-25,20)
+    # plt.xlabel('Number of Episodes')
+    # plt.ylabel('Rewards')
+    # plt.show()
 
 
 def main():
@@ -70,9 +70,9 @@ def main():
     input_dimensions = 80 * 80
     num_hidden_layer_neurons = 200
     
-    number_of_episodes = 100
-    saveFreq = 5
-    modelChkpntFreq = 10
+    number_of_episodes = 1000000
+    saveFreq = 500
+    modelChkpntFreq = 10000
 
     #Initialising attriobutes
     prev_processed_observations = None
