@@ -19,10 +19,9 @@ class Tensorflow():
         self.num_hidden_layer_neurons = num_hidden_layer_neurons
         self.input_dimensions = input_dimensions
         self.batch_size = 1
-        self.saveFreq = 20
 
         self.session = tf.InteractiveSession()
-
+        # self.session.close()
         self.observation_placeholder = tf.placeholder(tf.float32,
                                             [None, input_dimensions])
 
