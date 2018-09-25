@@ -1,0 +1,164 @@
+import gym
+import random
+import numpy as np
+from skimage.color import rgb2gray
+from skimage.transform import resize
+
+from models.model_using_DQN import model_using_DQN
+
+
+# get action from model using epsilon-greedy policy
+def get_action(history, agent):
+    history = np.float32(history / 255.0)
+    if np.random.rand() <= agent.epsilon:
+        return random.randrange(agent.action_size)
+    else:
+        q_value = agent.model.predict(history)
+        return np.argmax(q_value[0])
+
+# 210*160*3(color) --> 84*84(mono)
+# float --> integer (to reduce the size of replay memory)
+def pre_processing(observe):
+    gray = rgb2gray(observe)
+    # cropped_frame = gray[8:-12,4:-12]
+    normalized_frame = gray/255.0
+    processed_observe = np.uint8(resize(normalized_frame, [110,84]))
+    # processed_observe = np.uint8(
+    #     resize(rgb2gray(observe), (110, 84), mode='constant') * 255)
+    return processed_observe
+
+def saveFile(reward_sum):
+    np.savetxt("history/spaceInvader_keras_DQN/Rewards_from_DQN.txt",reward_sum, fmt= '%d')
+
+def loadFile():
+    Rewards = np.loadtxt("history/spaceInvader_keras_DQN/Rewards_from_DQN.txt", dtype=int)
+    return Rewards
+
+def plotGraph(number_eps, rewards):
+    plt.plot(number_eps, rewards, linestyle='--')
+    plt.ylim(-25,20)
+    plt.xlabel('Number of Episodes')
+    plt.ylabel('Rewards')
+    plt.show()
+
+if __name__ == "__main__":
+    # In case of BreakoutDeterministic-v3, always skip 4 frames
+    # Deterministic-v4 version use 4 actions
+    EPISODES = 50000
+    resume = False
+    saveFreq = 100
+    modelChkpntFreq = 5000
+    env = gym.make('SpaceInvadersDeterministic-v4')
+    agent = model_using_DQN(action_size=3, modelDir='history/spaceInvader_keras_DQN/', 
+                            fileName='history/spaceInvader_keras_DQN/summary/spaceInvader_dqn', statesize=(110, 84, 4), resume=False)
+
+    scores, episodes, global_step = [], [], 0
+
+    if resume:
+        scores = loadFile()
+    else:
+        scores = []
+    episode_number = len(scores)
+
+    agent.avg_q_max, agent.avg_loss = 0, 0
+
+    while episode_number < EPISODES:
+        episode_number += 1
+        done = False
+        dead = False
+        # 1 episode = 5 lives
+        step, score, start_life = 0, 0, 5
+        observe = env.reset()
+
+        # this is one of DeepMind's idea.
+        # just do nothing at the start of episode to avoid sub-optimal
+        for _ in range(random.randint(1, agent.no_op_steps)):
+            observe, _, _, _ = env.step(1)
+
+        # At start of episode, there is no preceding frame
+        # So just copy initial states to make history
+        state = pre_processing(observe)
+        history = np.stack((state, state, state, state), axis=2)
+        history = np.reshape([history], (1, 110, 84, 4))
+        while not done:
+            if agent.render:
+                env.render()
+            global_step += 1
+            step += 1
+
+            # get action for the current history and go one step in environment
+            action = get_action(history, agent)
+            # change action to real_action
+            if action == 0:
+                real_action = 1
+            elif action == 1:
+                real_action = 3
+            else:
+                real_action = 4
+
+            observe, reward, done, info = env.step(real_action)
+            # pre-process the observation --> history
+            next_state = pre_processing(observe)
+            next_state = np.reshape([next_state], (1, 110, 84, 1))
+            next_history = np.append(next_state, history[:, :, :, :3], axis=3)
+
+            # agent.avg_q_max += np.amax(
+            #     agent.model.predict(np.float32(history / 255.))[0])
+
+            # if the agent missed ball, agent is dead --> episode is not over
+            if start_life > info['ale.lives']:
+                dead = True
+                start_life = info['ale.lives']
+
+            reward = np.clip(reward, -1., 1.)
+
+            # save the sample <s, a, r, s'> to the replay memory
+            agent.replay_memory(history, action, reward, next_history, dead)
+            # every some time interval, train model
+            agent.train_replay()
+            # update the target model with model
+            if global_step % agent.update_target_rate == 0:
+                agent.update_target_model()
+
+            score += reward
+
+            # if agent is dead, then reset the history
+            if dead:
+                dead = False
+            else:
+                history = next_history
+    
+
+            # if done, plot the score over episodes
+            if done:
+                scores.append(score)
+
+                # if global_step > agent.train_start:
+                #     stats = [score, agent.avg_q_max / float(step), step,
+                #              agent.avg_loss / float(step)]
+                #     for i in range(len(stats)):
+                #         agent.sess.run(agent.update_ops[i], feed_dict={
+                #             agent.summary_placeholders[i]: float(stats[i])
+                #         })
+                #     summary_str = agent.sess.run(agent.summary_op)
+                #     agent.summary_writer.add_summary(summary_str, episode_number + 1)
+                #     print(summary_str,e)
+
+                print("episode:", episode_number, "  score:", score, "  memory length:",
+                      len(agent.memory),
+                      "  global_step:", global_step)
+
+                agent.avg_q_max, agent.avg_loss = 0, 0
+
+                if episode_number % saveFreq == 1:
+                    agent.save_model("history/spaceInvader_keras_DQN/spaceInvader_dqn_weights.h5")
+                    saveFile(scores)
+
+                if episode_number % modelChkpntFreq == 1:
+                    filename = 'spaceInvader_dqn_weights_' + str(episode_number) + '.h5'
+                    agent.saveCheckpoint(filename)
+
+        # if episode_number % 10 == 0:
+        #     print("episode:",episode_number)
+        #     agent.model.save_weights("history/spaceInvader_keras_DQN/spaceInvader_dqn.h5")
+        #     saveFile(scores)
