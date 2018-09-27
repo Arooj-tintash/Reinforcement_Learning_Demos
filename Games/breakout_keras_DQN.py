@@ -29,7 +29,7 @@ def saveFile(reward_sum):
 
 def loadFile():
     Rewards = np.loadtxt("history/breakout_keras_DQN/Rewards_from_DQN.txt", dtype=int)
-    return Rewards
+    return Rewards.tolist()
 
 def plotGraph(number_eps, rewards):
     plt.plot(number_eps, rewards, linestyle='--')
@@ -45,8 +45,8 @@ if __name__ == "__main__":
     env = gym.make('BreakoutDeterministic-v4')
     resume = False
     saveFreq = 500
-    modelChkpntFreq = 10000
-    agent = model_using_DQN(action_size=3, modelDir = 'history/breakout_keras_DQN/', fileName='history/breakout_keras_DQN/summary/breakout_dqn', statesize=(84, 84, 4), resume=False)
+    modelChkpntFreq = 5000
+    agent = model_using_DQN(action_size=3, modelDir = 'history/breakout_keras_DQN/', fileName='history/breakout_keras_DQN/breakout_dqn_weights.h5', summaryfolder = 'history/breakout_keras_DQN/summary/breakout_dqn', resume =resume, statesize=(84, 84, 4))
 
     scores, episodes, global_step = [], [], 0
 

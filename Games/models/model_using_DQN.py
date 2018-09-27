@@ -10,12 +10,12 @@ from keras.optimizers import RMSprop
 from keras.layers import Dense, Flatten
 from keras.layers.convolutional import Conv2D
 from keras import backend as K
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 import os
 
 
 class model_using_DQN:
-    def __init__(self, action_size, modelDir, fileName, resume, statesize):
+    def __init__(self, action_size, modelDir, fileName, summaryfolder, resume, statesize):
         self.render = False
         self.load_model = resume
         self.fileName = fileName
@@ -50,7 +50,7 @@ class model_using_DQN:
         self.summary_placeholders, self.update_ops, self.summary_op = \
             self.setup_summary()
         self.summary_writer = tf.summary.FileWriter(
-            self.fileName, self.sess.graph)
+            summaryfolder, self.sess.graph)
         self.sess.run(tf.global_variables_initializer())
 
         if self.load_model:
