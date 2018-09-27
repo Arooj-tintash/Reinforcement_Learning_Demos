@@ -79,7 +79,7 @@ def startTraining():
     running_reward = None
     reward_sum = 0
     
-    resume = False
+    resume = True
     render = False
 
     if resume is True:
@@ -178,5 +178,12 @@ def demoFromCheckpoint(episode_number):
             prev_processed_observations = None
             
     env.close()
+
+def plotRewards():
+    reward_sum_array = loadFile()
+    number_eps = np.arange(len(reward_sum_array))
+    visualize(number_eps, reward_sum_array)
+
 startTraining()
 #demoFromCheckpoint(20)
+# plotRewards()

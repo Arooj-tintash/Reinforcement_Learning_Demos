@@ -1,6 +1,9 @@
 import gym
 import numpy as np
-# from matplotlib import pyplot as plt
+import time
+from matplotlib import pyplot as plt
+
+from scipy.signal import savgol_filter
 
 import tensorflow as tf
 from models.model_using_tensorflow import Tensorflow
@@ -54,12 +57,18 @@ def loadFile():
     Rewards = np.loadtxt("history/pong_tf_qlearning/pong_numpy_qlearning_rewards.txt", dtype=int)
     return Rewards.tolist()
 
-# def visualize(number_eps, rewards):
-    # plt.plot(number_eps, rewards, linestyle='--')
-    # plt.ylim(-25,20)
-    # plt.xlabel('Number of Episodes')
-    # plt.ylabel('Rewards')
-    # plt.show()
+def visualize(number_eps, rewards):
+    plt.plot(number_eps, rewards, linestyle='--')
+    plt.ylim(-25,20)
+    plt.xlabel('Number of Episodes')
+    plt.ylabel('Rewards')
+    plt.show()
+
+    x = np.linspace(0,len(number_eps),50)
+    yhat = savgol_filter(rewards, 99, 3)
+
+    plt.plot(number_eps,yhat)
+    plt.show()
 
 
 def main():
@@ -80,7 +89,7 @@ def main():
     reward_sum = 0
     
     resume = True
-    render = False
+    render = True
 
     if resume is True:
         reward_sum_array = loadFile()
@@ -95,6 +104,7 @@ def main():
 
     while episode_number < number_of_episodes:
         if render:
+            time.sleep(0.02)
             env.render()        
         processed_observations, prev_processed_observations = preprocess_observations(observation, prev_processed_observations, input_dimensions)
         # hidden_layer_values, up_probability = apply_neural_nets(processed_observations, weights)
@@ -146,4 +156,11 @@ def main():
 
     env.close()
 
+def plotRewards():
+    reward_sum_array = loadFile()
+    number_eps = np.arange(len(reward_sum_array))
+    visualize(number_eps, reward_sum_array)
+
+#demoFromCheckpoint(20)
+plotRewards()
 main()

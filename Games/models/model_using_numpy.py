@@ -55,7 +55,8 @@ class model_using_numpy():
         delta_L = gradient_log_p
         dC_dw2 = np.dot(hidden_layer_values.T, delta_L).ravel()
         delta_l2 = np.outer(delta_L, weights['2'])
-        delta_l2 = self.relu(delta_l2)
+        # delta_l2 = self.relu(delta_l2)
+        delta_l2[hidden_layer_values <= 0] = 0
         dC_dw1 = np.dot(delta_l2.T, observation_values)
         return {
             '1': dC_dw1,
