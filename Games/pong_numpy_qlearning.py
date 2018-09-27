@@ -79,7 +79,7 @@ def startTraining():
     running_reward = None
     reward_sum = 0
     
-    resume = False
+    resume = True
     render = False
 
     if resume is True:
