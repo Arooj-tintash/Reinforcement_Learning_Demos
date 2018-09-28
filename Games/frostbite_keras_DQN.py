@@ -29,7 +29,7 @@ def saveFile(reward_sum):
 
 def loadFile():
     Rewards = np.loadtxt("history/frostbite_keras_DQN/Rewards_from_DQN.txt", dtype=int)
-    return Rewards
+    return Rewards.tolist()
 
 def plotGraph(number_eps, rewards):
     plt.plot(number_eps, rewards, linestyle='--')
@@ -226,6 +226,6 @@ def demoModel(filename):
             else:
                 history = next_history
 
-# trainModel()
+trainModel()
 
-demoModel('history/frostbite_keras_DQN/frostbite_dqn_weights.h5')
+# demoModel('history/frostbite_keras_DQN/frostbite_dqn_weights.h5')
