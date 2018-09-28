@@ -9,9 +9,9 @@ from models.model_using_DQN import model_using_DQN
 import time
 
 # get action from model using epsilon-greedy policy
-def get_action(history, agent, epsilon):
+def get_action(history, agent):
     history = np.float32(history / 255.0)
-    if np.random.rand() <= epsilon:
+    if np.random.rand() <= agent.epsilon:
         return random.randrange(agent.action_size)
     else:
         q_value = agent.model.predict(history)
@@ -87,7 +87,7 @@ def trainModel():
             step += 1
 
             # get action for the current history and go one step in environment
-            action = get_action(history, agent, agent.epsilon)
+            action = get_action(history, agent)
             # change action to real_action
             if action == 1:
                 real_action = 2  #Up
@@ -193,7 +193,7 @@ def demoModel(filename):
             env.render()
 
             # get action for the current history and go one step in environment
-            action = get_action(history, agent, 0)
+            action = get_action(history, agent)
             # change action to real_action
             if action == 1:
                 real_action = 2  #Up
