@@ -44,11 +44,11 @@ if __name__ == "__main__":
     EPISODES = 100000
     resume = False
     saveFreq = 500
-    modelChkpntFreq = 10000
+    modelChkpntFreq = 5000
 
     env = gym.make('FrostbiteDeterministic-v4')
     agent = model_using_DQN(action_size=4, modelDir= 'history/frostbite_keras_DQN/', 
-                            fileName='history/frostbite_keras_DQN/summary/frostbite_dqn', statesize=(84, 84, 4), resume=False)
+                            fileName='history/frostbite_keras_DQN/frostbite_dqn_weights.h5', summaryfolder = 'history/frostbite_keras_DQN/summary/frostbite_dqn', statesize=(84, 84, 4), resume=resume)
     
     scores, episodes, global_step = [], [], 0
 
