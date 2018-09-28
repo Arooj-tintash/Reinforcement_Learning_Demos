@@ -16,7 +16,6 @@ import os
 
 class model_using_DQN:
     def __init__(self, action_size, modelDir, fileName, summaryfolder, resume, statesize):
-        self.render = False
         self.load_model = resume
         self.fileName = fileName
         self.modeldir = modelDir
