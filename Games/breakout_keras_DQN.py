@@ -6,12 +6,12 @@ from skimage.transform import resize
 
 from models.model_using_DQN import model_using_DQN
 
-
+import time
 
 # get action from model using epsilon-greedy policy
-def get_action(history, agent):
+def get_action(history, agent, epsilon):
     history = np.float32(history / 255.0)
-    if np.random.rand() <= agent.epsilon:
+    if np.random.rand() <= epsilon:
         return random.randrange(agent.action_size)
     else:
         q_value = agent.model.predict(history)
@@ -38,12 +38,13 @@ def plotGraph(number_eps, rewards):
     plt.ylabel('Rewards')
     plt.show()
 
-if __name__ == "__main__":
+def trainModel():
     # In case of BreakoutDeterministic-v3, always skip 4 frames
     # Deterministic-v4 version use 4 actions
     EPISODES = 100000
     env = gym.make('BreakoutDeterministic-v4')
     resume = False
+    render = False
     saveFreq = 500
     modelChkpntFreq = 5000
     agent = model_using_DQN(action_size=3, modelDir = 'history/breakout_keras_DQN/', fileName='history/breakout_keras_DQN/breakout_dqn_weights.h5', summaryfolder = 'history/breakout_keras_DQN/summary/breakout_dqn', resume =resume, statesize=(84, 84, 4))
@@ -78,13 +79,13 @@ if __name__ == "__main__":
         history = np.stack((state, state, state, state), axis=2)
         history = np.reshape([history], (1, 84, 84, 4))
         while not done:
-            if agent.render:
+            if render:
                 env.render()
             global_step += 1
             step += 1
 
             # get action for the current history and go one step in environment
-            action = get_action(history, agent)
+            action = get_action(history, agent, agent.epsilon)
             # change action to real_action
             if action == 0:
                 real_action = 1
@@ -158,3 +159,77 @@ if __name__ == "__main__":
         #     print("episode:",episode_number)
         #     agent.model.save_weights("history/breakout_keras_DQN/breakout_dqn.h5")
         #     saveFile(scores)
+
+def demoModel(filename):
+    env = gym.make('BreakoutDeterministic-v4')
+    agent = model_using_DQN(action_size=3, modelDir = 'history/breakout_keras_DQN/', fileName=filename, summaryfolder = 'history/breakout_keras_DQN/summary/breakout_dqn', resume =True, statesize=(84, 84, 4))
+
+    scores, episodes, global_step = [], [], 0
+
+    episode_number = 0
+    
+    while episode_number < 10:
+        episode_number += 1
+        
+        done = False
+        dead = False
+
+        # 1 episode = 5 lives
+        step, score, start_life = 0, 0, 5
+        observe = env.reset()
+
+        # At start of episode, there is no preceding frame
+        # So just copy initial states to make history
+        state = pre_processing(observe)
+        history = np.stack((state, state, state, state), axis=2)
+        history = np.reshape([history], (1, 84, 84, 4))
+        while not done:
+            time.sleep(0.02)
+            env.render()
+            global_step += 1
+            step += 1
+
+            # get action for the current history and go one step in environment
+            action = get_action(history, agent, 0)
+            # change action to real_action
+            if action == 0:
+                real_action = 1
+            elif action == 1:
+                real_action = 2
+            else:
+                real_action = 3
+
+            observe, reward, done, info = env.step(real_action)
+            # pre-process the observation --> history
+            next_state = pre_processing(observe)
+            next_state = np.reshape([next_state], (1, 84, 84, 1))
+            next_history = np.append(next_state, history[:, :, :, :3], axis=3)
+
+            # if the agent missed ball, agent is dead --> episode is not over
+            if start_life > info['ale.lives']:
+                dead = True
+                start_life = info['ale.lives']
+
+            reward = np.clip(reward, -1., 1.)
+            score += reward
+
+            # if agent is dead, then reset the history
+            if dead:
+                dead = False
+                time.sleep(1)
+            else:
+                history = next_history
+    
+
+            # if done, plot the score over episodes
+            if done:
+                scores.append(score)
+
+                print("episode:", episode_number, "  score:", score, "  memory length:",
+                      len(agent.memory), "  global_step:", global_step)
+
+                agent.avg_q_max, agent.avg_loss = 0, 0
+
+# trainModel()
+
+demoModel('history/breakout_keras_DQN/breakout_dqn_weights.h5')
