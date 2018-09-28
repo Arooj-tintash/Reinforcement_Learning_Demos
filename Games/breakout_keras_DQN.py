@@ -9,9 +9,9 @@ from models.model_using_DQN import model_using_DQN
 import time
 
 # get action from model using epsilon-greedy policy
-def get_action(history, agent, epsilon):
+def get_action(history, agent):
     history = np.float32(history / 255.0)
-    if np.random.rand() <= epsilon:
+    if np.random.rand() <= agent.epsilon:
         return random.randrange(agent.action_size)
     else:
         q_value = agent.model.predict(history)
@@ -43,7 +43,7 @@ def trainModel():
     # Deterministic-v4 version use 4 actions
     EPISODES = 100000
     env = gym.make('BreakoutDeterministic-v4')
-    resume = False
+    resume = True
     render = False
     saveFreq = 500
     modelChkpntFreq = 5000
@@ -85,7 +85,7 @@ def trainModel():
             step += 1
 
             # get action for the current history and go one step in environment
-            action = get_action(history, agent, agent.epsilon)
+            action = get_action(history, agent)
             # change action to real_action
             if action == 0:
                 real_action = 1
@@ -164,18 +164,17 @@ def demoModel(filename):
     env = gym.make('BreakoutDeterministic-v4')
     agent = model_using_DQN(action_size=3, modelDir = 'history/breakout_keras_DQN/', fileName=filename, summaryfolder = 'history/breakout_keras_DQN/summary/breakout_dqn', resume =True, statesize=(84, 84, 4))
 
-    scores, episodes, global_step = [], [], 0
-
     episode_number = 0
     
-    while episode_number < 10:
+    demo_episodes = 10
+    while episode_number < demo_episodes:
         episode_number += 1
         
         done = False
         dead = False
 
         # 1 episode = 5 lives
-        step, score, start_life = 0, 0, 5
+        score, start_life = 0, 5
         observe = env.reset()
 
         # At start of episode, there is no preceding frame
@@ -183,14 +182,13 @@ def demoModel(filename):
         state = pre_processing(observe)
         history = np.stack((state, state, state, state), axis=2)
         history = np.reshape([history], (1, 84, 84, 4))
+
         while not done:
             time.sleep(0.02)
             env.render()
-            global_step += 1
-            step += 1
 
             # get action for the current history and go one step in environment
-            action = get_action(history, agent, 0)
+            action = get_action(history, agent)
             # change action to real_action
             if action == 0:
                 real_action = 1
@@ -200,6 +198,7 @@ def demoModel(filename):
                 real_action = 3
 
             observe, reward, done, info = env.step(real_action)
+
             # pre-process the observation --> history
             next_state = pre_processing(observe)
             next_state = np.reshape([next_state], (1, 84, 84, 1))
@@ -219,17 +218,7 @@ def demoModel(filename):
                 time.sleep(1)
             else:
                 history = next_history
-    
 
-            # if done, plot the score over episodes
-            if done:
-                scores.append(score)
+trainModel()
 
-                print("episode:", episode_number, "  score:", score, "  memory length:",
-                      len(agent.memory), "  global_step:", global_step)
-
-                agent.avg_q_max, agent.avg_loss = 0, 0
-
-# trainModel()
-
-demoModel('history/breakout_keras_DQN/breakout_dqn_weights.h5')
+# demoModel('history/breakout_keras_DQN/breakout_dqn_weights.h5')

@@ -22,12 +22,18 @@ class model_using_DQN:
         # environment settings
         self.state_size = statesize
         self.action_size = action_size
+        
         # parameters about epsilon
-        self.epsilon = 1.
         self.epsilon_start, self.epsilon_end = 1.0, 0.1
         self.exploration_steps = 100000.
         self.epsilon_decay_step = (self.epsilon_start - self.epsilon_end) \
-                                  / self.exploration_steps
+                                / self.exploration_steps
+
+        if resume:
+            self.epsilon = 0
+        else:
+            self.epsilon = 1
+
         # parameters about training
         self.batch_size = 32
         self.train_start = 50000
