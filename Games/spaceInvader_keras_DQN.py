@@ -44,13 +44,14 @@ def plotGraph(number_eps, rewards):
 if __name__ == "__main__":
     # In case of BreakoutDeterministic-v3, always skip 4 frames
     # Deterministic-v4 version use 4 actions
-    EPISODES = 50000
+    EPISODES = 100000
     resume = False
-    saveFreq = 100
+    render = False
+    saveFreq = 500
     modelChkpntFreq = 5000
     env = gym.make('SpaceInvadersDeterministic-v4')
     agent = model_using_DQN(action_size=3, modelDir='history/spaceInvader_keras_DQN/', 
-                            fileName='history/spaceInvader_keras_DQN/summary/spaceInvader_dqn', statesize=(110, 84, 4), resume=False)
+                            fileName='history/spaceInvader_keras_DQN/spaceInvader_dqn_weights.h5', summaryfolder = 'history/spaceInvader_keras_DQN/summary/spaceInvader_dqn', statesize=(110, 84, 4), resume=resume)
 
     scores, episodes, global_step = [], [], 0
 
@@ -81,7 +82,7 @@ if __name__ == "__main__":
         history = np.stack((state, state, state, state), axis=2)
         history = np.reshape([history], (1, 110, 84, 4))
         while not done:
-            if agent.render:
+            if render:
                 env.render()
             global_step += 1
             step += 1
@@ -150,11 +151,11 @@ if __name__ == "__main__":
 
                 agent.avg_q_max, agent.avg_loss = 0, 0
 
-                if episode_number % saveFreq == 1:
+                if episode_number % saveFreq == 0:
                     agent.save_model("history/spaceInvader_keras_DQN/spaceInvader_dqn_weights.h5")
                     saveFile(scores)
 
-                if episode_number % modelChkpntFreq == 1:
+                if episode_number % modelChkpntFreq == 0:
                     filename = 'spaceInvader_dqn_weights_' + str(episode_number) + '.h5'
                     agent.saveCheckpoint(filename)
 
