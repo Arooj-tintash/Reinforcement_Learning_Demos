@@ -152,11 +152,11 @@ def trainModel():
 
                 agent.avg_q_max, agent.avg_loss = 0, 0
 
-                if episode_number % saveFreq == 1:
+                if episode_number % saveFreq == 0:
                     agent.save_model("history/frostbite_keras_DQN/frostbite_dqn_weights.h5")
                     saveFile(scores)
 
-                if episode_number % modelChkpntFreq == 1:
+                if episode_number % modelChkpntFreq == 0:
                     filename = 'frostbite_dqn_weights_' + str(episode_number) + '.h5'
                     agent.saveCheckpoint(filename)
 
