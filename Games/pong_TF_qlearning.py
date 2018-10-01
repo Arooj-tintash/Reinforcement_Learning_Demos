@@ -64,8 +64,8 @@ def visualize(number_eps, rewards):
     plt.ylabel('Rewards')
     plt.show()
 
-    x = np.linspace(0,len(number_eps),50)
-    yhat = savgol_filter(rewards, 99, 3)
+    x = np.linspace(0,len(number_eps),20)
+    yhat = savgol_filter(rewards, 41, 2)
 
     plt.plot(number_eps,yhat)
     plt.show()
@@ -156,11 +156,57 @@ def main():
 
     env.close()
 
+def demoFromCheckpoint(episode_number):
+    env = gym.make("Pong-v0")
+    observation = env.reset() # This gets us the image
+    prev_processed_observations = None
+
+    #hyper-parameters
+    input_dimensions = 80 * 80
+    num_hidden_layer_neurons = 200
+
+    resume = True
+
+    #Create a model object
+    filename = 'history/pong_TF_qlearning/pong_TF_qlearning_weights_episode_' + str(episode_number) + '.ckpt'
+    model = Tensorflow(num_hidden_layer_neurons, input_dimensions, "pong_TF_qlearning_weights.ckpt", 'history/pong_tf_qlearning/', resume)
+
+    reward_sum = 0
+    episode_number = 0
+
+    while episode_number < 10:
+        env.render()
+        processed_observations, prev_processed_observations = preprocess_observations(observation, prev_processed_observations, input_dimensions)
+        up_probability = model.predict(processed_observations)
+
+        action = choose_action(up_probability)
+
+        # carry out the chosen action
+        observation, reward, done, info = env.step(action)
+    
+        reward_sum += reward
+
+        # carry out the chosen action
+        observation, reward, done, _ = env.step(action)
+        reward_sum += reward
+
+        if done :
+            episode_number += 1
+
+            observation = env.reset() # reset env
+            print ('Episode Number %d. episode reward total was %f.' % (episode_number, reward_sum))
+
+            reward_sum = 0
+            prev_processed_observations = None
+            
+    env.close()
+
+
 def plotRewards():
     reward_sum_array = loadFile()
     number_eps = np.arange(len(reward_sum_array))
     visualize(number_eps, reward_sum_array)
 
-#demoFromCheckpoint(20)
+demoFromCheckpoint(40001)
 plotRewards()
-main()
+#main()
