@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # Deterministic-v4 version use 4 actions
     EPISODES = 100000
     env = gym.make('BreakoutDeterministic-v4')
-    resume = False
+    resume = True
     saveFreq = 500
     modelChkpntFreq = 5000
     agent = model_using_DQN(action_size=3, modelDir = 'history/breakout_keras_DQN/', fileName='history/breakout_keras_DQN/breakout_dqn_weights.h5', summaryfolder = 'history/breakout_keras_DQN/summary/breakout_dqn', resume =resume, statesize=(84, 84, 4))
@@ -146,11 +146,11 @@ if __name__ == "__main__":
 
                 agent.avg_q_max, agent.avg_loss = 0, 0
 
-                if episode_number % saveFreq == 1:
+                if episode_number % saveFreq == 0:
                     agent.save_model("history/breakout_keras_DQN/breakout_dqn_weights.h5")
                     saveFile(scores)
 
-                if episode_number % modelChkpntFreq == 1:
+                if episode_number % modelChkpntFreq == 0:
                     filename = 'breakout_dqn_weights_' + str(episode_number) + '.h5'
                     agent.saveCheckpoint(filename)
 
