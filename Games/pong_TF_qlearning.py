@@ -64,14 +64,13 @@ def visualize(number_eps, rewards):
     plt.ylabel('Rewards')
     plt.show()
 
-    x = np.linspace(0,len(number_eps),20)
     yhat = savgol_filter(rewards, 41, 2)
 
     plt.plot(number_eps,yhat)
     plt.show()
 
 
-def main():
+def startTraining():
     env = gym.make("Pong-v0")
     observation = env.reset() # This gets us the image
 
@@ -79,7 +78,7 @@ def main():
     input_dimensions = 80 * 80
     num_hidden_layer_neurons = 200
     
-    number_of_episodes = 1000000
+    number_of_episodes = 100000
     saveFreq = 500
     modelChkpntFreq = 10000
 
@@ -88,8 +87,8 @@ def main():
     running_reward = None
     reward_sum = 0
     
-    resume = True
-    render = True
+    resume = False
+    render = False
 
     if resume is True:
         reward_sum_array = loadFile()
@@ -104,7 +103,6 @@ def main():
 
     while episode_number < number_of_episodes:
         if render:
-            time.sleep(0.02)
             env.render()        
         processed_observations, prev_processed_observations = preprocess_observations(observation, prev_processed_observations, input_dimensions)
         # hidden_layer_values, up_probability = apply_neural_nets(processed_observations, weights)
@@ -146,11 +144,11 @@ def main():
             reward_sum = 0
             prev_processed_observations = None
             
-            if episode_number % saveFreq == 1:
+            if episode_number % saveFreq == 0:
                 model.saveModel()
                 saveFile(reward_sum_array)
 
-            if episode_number % modelChkpntFreq == 1:
+            if episode_number % modelChkpntFreq == 0:
                 filename = 'pong_TF_qlearning_weights_' + str(episode_number) + '.ckpt'
                 model.saveCheckpoint(filename)
 
@@ -209,5 +207,5 @@ def plotRewards():
     visualize(number_eps, reward_sum_array)
 
 # demoFromCheckpoint(50001)
-plotRewards()
-#main()
+# plotRewards()
+startTraining()

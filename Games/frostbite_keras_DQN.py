@@ -5,6 +5,9 @@ from skimage.color import rgb2gray
 from skimage.transform import resize
 
 from models.model_using_DQN import model_using_DQN
+from matplotlib import pyplot as plt
+
+from scipy.signal import savgol_filter
 
 import time
 
@@ -33,16 +36,24 @@ def loadFile():
 
 def plotGraph(number_eps, rewards):
     plt.plot(number_eps, rewards, linestyle='--')
-    plt.ylim(-25,20)
+    ymin = min(rewards)
+    ymax = max(rewards)
+
+    plt.ylim(ymin - 10,ymax + 10)
     plt.xlabel('Number of Episodes')
     plt.ylabel('Rewards')
+    plt.show()
+
+    yhat = savgol_filter(rewards, 41, 2)
+
+    plt.plot(number_eps,yhat)
     plt.show()
 
 def trainModel():
     # In case of BreakoutDeterministic-v3, always skip 4 frames
     # Deterministic-v4 version use 4 actions
-    EPISODES = 100000
-    resume = True
+    EPISODES = 1000000
+    resume = False
     render = False
     saveFreq = 500
     modelChkpntFreq = 5000
@@ -226,6 +237,11 @@ def demoModel(filename):
             else:
                 history = next_history
 
-trainModel()
+def plotRewards():
+    reward_sum_array = loadFile()
+    number_eps = np.arange(len(reward_sum_array))
+    plotGraph(number_eps, reward_sum_array)
 
+# trainModel()
 # demoModel('history/frostbite_keras_DQN/frostbite_dqn_weights.h5')
+plotRewards()

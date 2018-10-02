@@ -2,6 +2,8 @@ import gym
 import numpy as np
 from matplotlib import pyplot as plt
 
+from scipy.signal import savgol_filter
+
 import time
 from models.model_using_numpy import model_using_numpy
 
@@ -60,6 +62,11 @@ def visualize(number_eps, rewards):
     plt.xlabel('Number of Episodes')
     plt.ylabel('Rewards')
     plt.show()
+    
+    yhat = savgol_filter(rewards, 41, 2)
+
+    plt.plot(number_eps,yhat)
+    plt.show()
 
 
 def startTraining():
@@ -70,7 +77,7 @@ def startTraining():
     input_dimensions = 80 * 80
     num_hidden_layer_neurons = 200
     
-    number_of_episodes = 1000000
+    number_of_episodes = 100000
     saveFreq = 500
     modelChkpntFreq = 10000
 
@@ -79,7 +86,7 @@ def startTraining():
     running_reward = None
     reward_sum = 0
     
-    resume = True
+    resume = False
     render = False
 
     if resume is True:
@@ -131,11 +138,11 @@ def startTraining():
             reward_sum = 0
             prev_processed_observations = None
 
-            if episode_number % saveFreq == 1:
+            if episode_number % saveFreq == 0:
                 model.saveWeights()
                 saveFile(reward_sum_array)
 
-            if episode_number % modelChkpntFreq == 1:
+            if episode_number % modelChkpntFreq == 0:
                 filename = 'history/pong_numpy_qlearning/pong_numpy_qlearning_weights_episode_' + str(episode_number) + '.p'
                 model.saveCheckpoint(filename)
 
@@ -185,6 +192,6 @@ def plotRewards():
     number_eps = np.arange(len(reward_sum_array))
     visualize(number_eps, reward_sum_array)
 
-# startTraining()
-demoFromCheckpoint(20001)
+startTraining()
+# demoFromCheckpoint(20001)
 # plotRewards()
