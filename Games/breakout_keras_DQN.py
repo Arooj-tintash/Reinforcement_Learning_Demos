@@ -6,7 +6,7 @@ from skimage.transform import resize
 
 from models.model_using_DQN import model_using_DQN
 
-
+import time
 
 # get action from model using epsilon-greedy policy
 def get_action(history, agent):
@@ -79,7 +79,8 @@ if __name__ == "__main__":
         history = np.stack((state, state, state, state), axis=2)
         history = np.reshape([history], (1, 84, 84, 4))
         while not done:
-            if agent.render:
+            if render:
+                time.sleep(0.02)
                 env.render()
             global_step += 1
             step += 1
