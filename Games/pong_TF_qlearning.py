@@ -175,6 +175,7 @@ def demoFromCheckpoint(episode_number):
     episode_number = 0
 
     while episode_number < 10:
+        time.sleep(0.01)
         env.render()
         processed_observations, prev_processed_observations = preprocess_observations(observation, prev_processed_observations, input_dimensions)
         up_probability = model.predict(processed_observations)
@@ -207,6 +208,6 @@ def plotRewards():
     number_eps = np.arange(len(reward_sum_array))
     visualize(number_eps, reward_sum_array)
 
-demoFromCheckpoint(40001)
+# demoFromCheckpoint(50001)
 plotRewards()
 #main()

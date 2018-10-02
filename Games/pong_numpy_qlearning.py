@@ -2,7 +2,7 @@ import gym
 import numpy as np
 from matplotlib import pyplot as plt
 
-
+import time
 from models.model_using_numpy import model_using_numpy
 
 def downsample(image):
@@ -158,6 +158,7 @@ def demoFromCheckpoint(episode_number):
     episode_number = 0
 
     while episode_number < 10:
+        time.sleep(0.01)
         env.render()
         processed_observations, prev_processed_observations = preprocess_observations(observation, prev_processed_observations, input_dimensions)
         _, up_probability = model.apply_neural_nets(processed_observations) 
@@ -184,6 +185,6 @@ def plotRewards():
     number_eps = np.arange(len(reward_sum_array))
     visualize(number_eps, reward_sum_array)
 
-startTraining()
-#demoFromCheckpoint(20)
+# startTraining()
+demoFromCheckpoint(20001)
 # plotRewards()
