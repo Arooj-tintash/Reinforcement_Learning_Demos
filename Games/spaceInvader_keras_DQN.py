@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 from scipy.signal import savgol_filter
 
 import time
+import calendar
 
 # get action from model using epsilon-greedy policy
 def get_action(history, agent):
@@ -32,12 +33,17 @@ def pre_processing(observe):
     #     resize(rgb2gray(observe), (110, 84), mode='constant') * 255)
     return processed_observe
 
-def saveFile(reward_sum):
-    np.savetxt("history/spaceInvader_keras_DQN/Rewards_from_DQN.txt",reward_sum, fmt= '%d')
+def saveFile(reward_sum, timestamps):
+    np.savetxt("history/spaceInvader_keras_DQN/spaceInvader_rewards.txt",reward_sum, fmt= '%d')
+
+    currentTime = calendar.timegm(time.gmtime())
+    timestamps.append(currentTime)
+    np.savetxt("history/spaceInvader_keras_DQN/spaceInvader_timestamps.txt",timestamps, fmt= '%d')
 
 def loadFile():
-    Rewards = np.loadtxt("history/spaceInvader_keras_DQN/Rewards_from_DQN.txt", dtype=int)
-    return Rewards.tolist()
+    Rewards = np.loadtxt("history/spaceInvader_keras_DQN/spaceInvader_rewards.txt", dtype=int)
+    timestamps = np.loadtxt("history/spaceInvader_keras_DQN/spaceInvader_timestamps.txt", dtype=int)
+    return Rewards.tolist(), timestamps.tolist()
 
 def plotGraph(number_eps, rewards):
     plt.plot(number_eps, rewards, linestyle='--')
@@ -68,10 +74,11 @@ def trainModel():
 
     scores, episodes, global_step = [], [], 0
 
-    if resume:
-        scores = loadFile()
+    if resume is True:
+        scores, timestamps = loadFile()
     else:
-        scores = []
+        scores, timestamps = [], []
+    
     episode_number = len(scores)
 
     agent.avg_q_max, agent.avg_loss = 0, 0
@@ -166,7 +173,7 @@ def trainModel():
 
                 if episode_number % saveFreq == 0:
                     agent.save_model("history/spaceInvader_keras_DQN/spaceInvader_dqn_weights.h5")
-                    saveFile(scores)
+                    saveFile(scores, timestamps)
 
                 if episode_number % modelChkpntFreq == 0:
                     filename = 'spaceInvader_dqn_weights_' + str(episode_number) + '.h5'

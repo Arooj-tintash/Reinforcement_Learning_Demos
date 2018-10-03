@@ -5,6 +5,8 @@ from matplotlib import pyplot as plt
 
 from scipy.signal import savgol_filter
 
+import calendar
+
 import tensorflow as tf
 from models.model_using_tensorflow import Tensorflow
 
@@ -50,12 +52,17 @@ def choose_action(probability):
          # signifies down in openai gym
         return 3
 
-def saveFile(reward_sum):
-    np.savetxt("history/pong_tf_qlearning/pong_numpy_qlearning_rewards.txt",reward_sum, fmt= '%d')
+def saveFile(reward_sum, timestamps):
+    np.savetxt("history/pong_tf_qlearning/pong_tf_qlearning_rewards.txt",reward_sum, fmt= '%d')
+
+    currentTime = calendar.timegm(time.gmtime())
+    timestamps.append(currentTime)
+    np.savetxt("history/pong_tf_qlearning/pong_tf_qlearning_timestamps.txt",timestamps, fmt= '%d')
 
 def loadFile():
-    Rewards = np.loadtxt("history/pong_tf_qlearning/pong_numpy_qlearning_rewards.txt", dtype=int)
-    return Rewards.tolist()
+    Rewards = np.loadtxt("history/pong_tf_qlearning/pong_tf_qlearning_rewards.txt", dtype=int)
+    timestamps = np.loadtxt("history/pong_tf_qlearning/pong_tf_qlearning_timestamps.txt", dtype=int)
+    return Rewards.tolist(), timestamps.tolist()
 
 def visualize(number_eps, rewards):
     plt.plot(number_eps, rewards, linestyle='--')
@@ -91,9 +98,9 @@ def startTraining():
     render = False
 
     if resume is True:
-        reward_sum_array = loadFile()
+        reward_sum_array, timestamps = loadFile()
     else:
-        reward_sum_array = []
+        reward_sum_array, timestamps = [], []
 
     episode_number = len(reward_sum_array)
 
@@ -146,7 +153,7 @@ def startTraining():
             
             if episode_number % saveFreq == 0:
                 model.saveModel()
-                saveFile(reward_sum_array)
+                saveFile(reward_sum_array, timestamps)
 
             if episode_number % modelChkpntFreq == 0:
                 filename = 'pong_TF_qlearning_weights_' + str(episode_number) + '.ckpt'
