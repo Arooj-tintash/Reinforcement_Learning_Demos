@@ -1,0 +1,4 @@
+model_checkpoint_path: "pong_TF_qlearning_weights.ckpt"
+all_model_checkpoint_paths: "pong_TF_qlearning_weights_10000.ckpt"
+all_model_checkpoint_paths: "pong_TF_qlearning_weights_20000.ckpt"
+all_model_checkpoint_paths: "pong_TF_qlearning_weights.ckpt"
