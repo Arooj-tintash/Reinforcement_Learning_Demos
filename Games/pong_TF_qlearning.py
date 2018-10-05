@@ -244,11 +244,11 @@ for opt, arg in opts:
     elif opt in ("-d", "--demochkpt"):
         demoChkpt = arg
 
-if isGraph:
+if isGraph == 'True':
     plotRewards()
 
-if isTrain == True:
-    startTraining(isResume, isRender)
+if isTrain == 'True':
+    startTraining(isResume == 'True', isRender == 'True')
 else:
     print('Starting from demo checkpoint : ', demoChkpt)
     demoFromCheckpoint(demoChkpt)
