@@ -13,6 +13,8 @@ from scipy.signal import savgol_filter
 import time
 import calendar
 
+import sys, getopt
+
 # get action from model using epsilon-greedy policy
 def get_action(history, agent):
     history = np.float32(history / 255.0)
@@ -60,12 +62,12 @@ def plotGraph(number_eps, rewards):
     plt.plot(number_eps,yhat)
     plt.show()
 
-def trainModel():
+def trainModel(isResume, isRender):
     # In case of BreakoutDeterministic-v3, always skip 4 frames
     # Deterministic-v4 version use 4 actions
     EPISODES = 100000
-    resume = False
-    render = False
+    resume = isResume
+    render = isRender
     saveFreq = 500
     modelChkpntFreq = 5000
     env = gym.make('SpaceInvadersDeterministic-v4')
@@ -244,6 +246,42 @@ def plotRewards():
     number_eps = np.arange(len(reward_sum_array))
     plotGraph(number_eps, reward_sum_array)
 
-trainModel()
-# demoModel('history/spaceInvader_keras_DQN/spaceInvader_dqn_weights.h5')
-# plotRewards()
+argv = sys.argv[1:]
+try:
+    opts, args = getopt.getopt(argv,"ht:r:R:g:d:",["help","train=","resume=","render=","graph=","demochkpt="])
+except getopt.GetoptError:
+    print('python3 spaceInvader_keras_DQN.py --train True --resume True --render False --graph True')
+    sys.exit(2)
+
+isGraph = False
+demoChkpt = 0
+
+for opt, arg in opts:
+    if opt == '-h':
+        print('python3 spaceInvader_keras_DQN.py --train True --resume True --render False')
+        sys.exit()
+    elif opt in ("-t", "--train"):
+        isTrain = arg
+    elif opt in ("-r", "--resume"):
+        isResume = arg
+    elif opt in ("-R", "--render"):
+        isRender = arg
+    elif opt in ("-g", "--graph"):
+        isGraph = arg
+    elif opt in ("-d", "--demochkpt"):
+        demoChkpt = arg
+
+if isGraph == 'True':
+    plotRewards()
+
+if isTrain == 'True':
+    trainModel(isResume == 'True', isRender == 'True')
+else:
+    print('Starting from demo checkpoint : ', demoChkpt)
+    
+    if demoChkpt == 0:
+        filename = 'history/spaceInvader_keras_DQN/spaceInvader_dqn_weights.h5'
+    else:
+        filename = 'history/spaceInvader_keras_DQN/spaceInvader_dqn_weights_' + str(demoChkpt) + '.h5'
+
+    demoModel(filename)

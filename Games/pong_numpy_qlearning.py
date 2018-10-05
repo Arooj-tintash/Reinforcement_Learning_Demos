@@ -1,12 +1,16 @@
 import gym
+
 import numpy as np
 from matplotlib import pyplot as plt
 
 from scipy.signal import savgol_filter
 
+from models.model_using_numpy import model_using_numpy
+
 import calendar
 import time
-from models.model_using_numpy import model_using_numpy
+
+import sys, getopt
 
 def downsample(image):
     # Take only alternate pixels - basically halves the resolution of the image (which is fine for us)
@@ -75,7 +79,7 @@ def visualize(number_eps, rewards):
     plt.show()
 
 
-def startTraining():
+def startTraining(isResume, isRender):
     env = gym.make("Pong-v0")
     observation = env.reset() # This gets us the image
 
@@ -92,8 +96,8 @@ def startTraining():
     running_reward = None
     reward_sum = 0
     
-    resume = False
-    render = False
+    resume = isResume
+    render = isRender
 
     if resume is True:
         reward_sum_array, timestamps = loadFile()
@@ -163,8 +167,11 @@ def demoFromCheckpoint(episode_number):
 
     resume = True
 
-    #Create a model object
-    filename = 'history/pong_numpy_qlearning/pong_numpy_qlearning_weights_episode_' + str(episode_number) + '.p'
+    if demoChkpt == 0:
+        filename = 'history/pong_numpy_qlearning/pong_numpy_qlearning_weights.p'
+    else:
+        filename = 'history/pong_numpy_qlearning/pong_numpy_qlearning_weights_episode_' + str(episode_number) + '.p'
+
     model = model_using_numpy(num_hidden_layer_neurons, input_dimensions, filename, resume)
 
     reward_sum = 0
@@ -194,10 +201,40 @@ def demoFromCheckpoint(episode_number):
     env.close()
 
 def plotRewards():
-    reward_sum_array = loadFile()
+    reward_sum_array, timestamps = loadFile()
     number_eps = np.arange(len(reward_sum_array))
     visualize(number_eps, reward_sum_array)
 
-startTraining()
-# demoFromCheckpoint(20001)
-# plotRewards()
+argv = sys.argv[1:]
+try:
+    opts, args = getopt.getopt(argv,"ht:r:R:g:d:",["help","train=","resume=","render=","graph=","demochkpt="])
+except getopt.GetoptError:
+    print('python3 pong_numpy_qlearning.py --train True --resume True --render False --graph True')
+    sys.exit(2)
+
+isGraph = False
+demoChkpt = 0
+
+for opt, arg in opts:
+    if opt == '-h':
+        print('python3 pong_numpy_qlearning.py --train True --resume True --render False')
+        sys.exit()
+    elif opt in ("-t", "--train"):
+        isTrain = arg
+    elif opt in ("-r", "--resume"):
+        isResume = arg
+    elif opt in ("-R", "--render"):
+        isRender = arg
+    elif opt in ("-g", "--graph"):
+        isGraph = arg
+    elif opt in ("-d", "--demochkpt"):
+        demoChkpt = arg
+
+if isGraph == 'True':
+    plotRewards()
+
+if isTrain == 'True':
+    startTraining(isResume == 'True', isRender == 'True')
+else:
+    print('Starting from demo checkpoint : ', demoChkpt)
+    demoFromCheckpoint(demoChkpt)
